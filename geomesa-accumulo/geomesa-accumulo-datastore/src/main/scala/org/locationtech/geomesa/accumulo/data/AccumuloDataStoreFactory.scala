@@ -145,7 +145,10 @@ object AccumuloDataStoreFactory extends GeoMesaDataStoreInfo {
     }
 
     doIfOverridden(InstanceIdParam, { paramVal: String => conf.withInstance(paramVal) }, config.getHasInstance())
-    doIfOverridden(ZookeepersParam, { paramVal: String => conf.withZkHosts(paramVal) }, config.zookeepers != None)
+    // Some codepaths in GeoMesa use ZookeeperInstance.getZooKeepers() which only supports Accumulo 1.x property names.
+    // Set the zookeeper hosts explicitly to keep things consistent, otherwise ZookeeperInstance.getZookeepers() will
+    // fallback to localhost:2181.
+    conf.withZkHosts(lookup(ZookeepersParam, config.zookeepers))
     ZookeeperTimeoutParam.lookupOpt(params).foreach { timeout =>
       conf.`with`(ClientProperty.INSTANCE_ZK_TIMEOUT, timeout)
     }
